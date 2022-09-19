@@ -1,1 +1,4 @@
+flights <- read.csv("Data/Airlines.csv")
+str(flights)
+
 
