@@ -1,1 +1,209 @@
+---
+title: "Linear Regression"
+authors: "Andrew Sen, Atmin Sheth"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+editor_options:
+  chunk_output_type: inline
+---
 
+**Authors:**
+
+Andrew Sen  
+Atmin Sheth
+
+**Date:**
+
+9/25/2022
+
+### Overview of Linear Regression
+
+Linear regression forms a model of data that takes predictor values to predict some quantitative target value in the data. Generally, linear regression creates some line of best fit for the data that can be used to predict values for new data. Despite the name, linear regression can be used for polynomial functions as well. Linear regression has low variance and is unlikely to overfit training data. However, linear regression tends to have high bias and may create a linear relationship that does not actually exist in the data, leading to underfit.
+
+### Data
+
+This notebook will use a dataset found on the UCI Machine Learning Repository:
+
+Fanaee-T, Hadi, and Gama, Joao, 'Event labeling combining ensemble detectors and background knowledge', Progress in Artificial Intelligence (2013): pp. 1-15, Springer Berlin Heidelberg, https://archive.ics.uci.edu/ml/datasets/bike+sharing+dataset.
+
+The data describes hourly bike rental numbers from the Capital Bikeshare system between 2011 and 2012.
+
+The predictors include:
+
+*   instant: record index
+*   dteday: date
+*   season: season (1:winter, 2:spring, 3:summer, 4:fall)
+*   yr: year (0:2011, 1:2012)
+*   mnth: month (1 - 12)
+*   hr: hour (0-23)
+*   holiday: (0:not a holiday, 1:holiday)
+*   weekday: (0:Sunday - 6:Saturday)
+*   workingday: (0:not a workday, 1:not weekend and not holiday)
+*   weathersit: hourly weather
+    *   1: clear, few clouds, partly cloudy
+    *   2: mist+cloudy, mist+broken clouds, mist+few clouds, mist
+    *   3: light snow, light rain+thunderstorm+scattered clouds, light rain+scattered clouds
+    *   4: heavy rain+ice pallets+thunderstorm+mist, snow+fog
+*   temp: normalized temperature in Celsius
+*   atemp: normalized feeling temperature in Celsius
+*   hum: normalized humidity divided by 100
+*   windspeed: normalized wind speed divided by 67
+
+The possible target columns include:
+
+*   casual: number of rentals from casual users
+*   registered: number of rentals from registered users
+*   cnt: total rentals
+
+We will be predicting cnt.
+
+### Data Cleaning
+
+First, we will read in the data. Then, we will clean the data by removing rows with NAs and removing the instant and dteday columns. We will also remove the casual and registered columns because they are not independent from cnt.
+
+```{r}
+bikesharing <- read.csv("data/bike-sharing.csv")
+bikesharing <- bikesharing[,c(3:14, 17)] #remove instant, dteday, casual, registered
+bikesharing <- bikesharing[complete.cases(bikesharing),] #remove incomplete rows
+```
+
+### Data Exploration
+
+First, we will divide the data into training and test data with an 80/20 split.
+
+```{r}
+set.seed(1234)
+i <- sample(1:nrow(bikesharing), nrow(bikesharing)*0.8, replace=FALSE)
+train <- bikesharing[i,]
+test <- bikesharing[-i,]
+```
+
+Now, we will explore the training data. First, we will see summaries of all the columns.
+
+```{r}
+summary(train)
+```
+
+We can use dim() to find the number of rows and columns.
+
+```{r}
+dim(train)
+```
+
+We can use head() to see the first few rows of the training data.
+
+```{r}
+head(train)
+```
+
+Similarly, we can use tail() to see the last few rows.
+
+```{r}
+tail(train)
+```
+
+Finally, we can use str() to view the structure of the training data.
+
+```{r}
+str(train)
+```
+
+Next, we'll graph the number of bike rentals over the hour of the day.
+
+```{r}
+plot(train$hr, train$cnt, xlab="Hour", ylab="Rentals")
+```
+
+The graph shows that early morning and the afternoon tend to be the most popular times for renting a bike.
+
+We will also plot bike rentals over feeling temperature.
+
+```{r}
+plot(train$atemp, train$cnt, xlab="Normalized Feeling Temperature", ylab="Rentals")
+```
+
+This shows that bike rentals tend to increase if the temperature is warmer.
+
+### Simple Linear Regression
+
+We will create a simple linear regression model using feeling temperature as our single predictor.
+
+```{r}
+lm1 <- lm(cnt~atemp, data=train)
+summary(lm1)
+```
+
+The model estimates that for every unit increase in feeling temperature, there will be 418.538 more bike rentals. R-squared is 0.1551, indicating that this linear model is a poor predictor of bike rentals. We would like to see an R-squared value that is closer to 1. The residuals are the differences between the predicted values for cnt and the actual values for cnt. The residual standard error (RSE) is the standard deviation of the residuals, and we would like it to be as low as possible. When we make other models later, we can compare them by comparing their RSE values.
+
+We can also judge our model by looking at the residuals.
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm1)
+```
+
+The Residuals vs. Fitted graph tells us if the relationship is linear. If the residuals are equally spread around a horizontal line without distinct patterns, this indicates the relationship isn't non-linear. The graph for this model does not seem evenly spread out, suggesting it is not linear.
+
+Normal Q-Q shows if the residuals are normally distributed. If the residuals are plotted in a straight line, the relationship is likely linear. In our case, the plotted points seem to greatly deviate after a certain point. This indicates that the relationship is not linear.
+
+Spread-Location shows if the residuals are spread equally along the range of predictors. Similar to the Residuals vs. Fitted graph, we want to see a straight, horizontal line with the residuals spread evenly around it. The line in our Scale-Location graph is not horizontal as it has a steep slope until around 200 on the x-axis. This further indicates the relationship is not linear.
+
+Finally, Residuals vs. Leverage tells us if there were any influential cases. Note that even if a data point is an outlier, that does not necessarily mean the regression would have been different had it not been present. An influential point is an extreme case that changes the regression due to its presence. The red dotted lines mark the Cook's distance. Points beyond this line are influential points. Our model has not influential points.
+
+### Multiple Linear Regression
+
+Now we will attempt to make a better model by using multiple predictors. I will use every predictor except season because it corresponds to month, workingday because it corresponds to weekday and holiday, and temp because it correlates with atemp.
+
+```{r}
+lm2 <- lm(cnt~hr+atemp+hum+windspeed+weathersit+weekday+holiday+yr+mnth, data=train)
+summary(lm2)
+par(mfrow=c(2,2))
+plot(lm2)
+```
+
+### Polynomial Regression
+
+Finally, we will create a polynomial regression model using the same predictors as our second linear regression model.
+
+```{r}
+lm3 <- lm(cnt~poly(yr, mnth, hr, holiday, weekday, weathersit, atemp, hum, windspeed, degree=3, raw=TRUE), data=train)
+summary(lm3)
+par(mfrow=c(2,2))
+plot(lm3)
+```
+
+The simple linear regression model appears to be the worst one based on the adjusted R-squared value. The residual plots make it apparent that the relationship displayed between cnt and atemp is not very linear, so it makes sense that the simple linear regression model would suffer from underfit. The multiple linear regression model appears to be a little better, which makes sense since the model is considering more relevant factors. However, the second model also appears to underfit the training data. The third model appears to be the best based on R-squared. Based on the residual plots for the first and second models, the relationships between the predictors and the target is not totally linear, so it makes sense that polynomial regression would better fit the training data.
+
+### Model Testing
+
+Now, we will evaluate how each model performs against the test data.
+
+```{r}
+pred1 <- predict(lm1, newdata=test)
+cor1 <- cor(pred1, test$cnt)
+mse1 <- mean((pred1-test$cnt)^2) 
+rmse1 <- sqrt(mse1)
+print(paste('correlation of lm1:', cor1))
+print(paste('mse of lm1:', mse1))
+print(paste('rmse of lm1:', rmse1))
+
+pred2 <- predict(lm2, newdata=test)
+cor2 <- cor(pred2, test$cnt)
+mse2 <- mean((pred2-test$cnt)^2) 
+rmse2 <- sqrt(mse2)
+print(paste('correlation of lm2:', cor2))
+print(paste('mse of lm2:', mse2))
+print(paste('rmse of lm2:', rmse2))
+
+pred3 <- predict(lm3, newdata=test)
+cor3 <- cor(pred3, test$cnt)
+mse3 <- mean((pred3-test$cnt)^2) 
+rmse3 <- sqrt(mse3)
+print(paste('correlation of lm3:', cor3))
+print(paste('mse of lm3:', mse3))
+print(paste('rmse of lm3:', rmse3))
+```
+
+We can tell how each model performed based on the correlation and mse values. A model that has a high correlation and low mse is one that performed better. As we predicted based on the R-squared values of the three models, `lm1` performed the worst on the test data, `lm2` performed better, and `lm3` was the best. These results likely happened because the relationship between the factors and the target is not very linear, as demonstrated by the residual plots. This means that a polynomial model had a better chance at accurately modeling the data.
