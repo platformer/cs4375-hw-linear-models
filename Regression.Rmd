@@ -168,7 +168,7 @@ plot(lm2)
 Finally, we will create a polynomial regression model using the same predictors as our second linear regression model.
 
 ```{r}
-lm3 <- lm(cnt~poly(yr, mnth, hr, holiday, weekday, weathersit, atemp, hum, windspeed, degree=3, raw=TRUE), data=train)
+lm3 <- lm(cnt~poly(yr)+poly(mnth, degree=3)+poly(hr,degree=3)+poly(holiday)+poly(weekday, degree=3)+poly(weathersit, degree=3)+poly(atemp, degree=3)+poly(hum, degree=3)+poly(windspeed, degree=3), data=train)
 summary(lm3)
 par(mfrow=c(2,2))
 plot(lm3)
