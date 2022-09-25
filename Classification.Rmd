@@ -42,13 +42,22 @@ Logistic Regression allows to classify the data into n- parts  to determine the 
 for this dataset is a classification of if the airlines will have delay or not , flight is to see a corelatrion wiht airline
 
 **strengths of logistic **
-separates classes 
-computationally cheap
-nice probability output
-**weakness of logistic**
-there is a chance of too close of probility so not able to classify 
+The benefit of using logistic reggresuib model let's you separate the classes and see a distinct differences, it is easy computation 
+where the result is in probability bases on the predictor and and relation of probability or mean to other predictors. The output
+is easy to comprehend.
 
-**the evalution**
+**weakness of logistic**
+there is a chance of too close of probability so not able to classify due to being clustered.  Not able to sometimes 
+make a model line. 
+
+**Strength of naive bayes**
+Naive bayes is easy to implement and interpret. It works well with small data. it also works well with high dimension
+
+**weakness of naive bayes**
+Naive bayes tend to outperform in larger set.there are many guesses that are not sometimes made in a train dataset.there is a limitation if the predictors are
+not independent.
+
+**the evaluation**
 The benefit of using this was see the probability of a airline being delay or not.
 
 ##Reading csv file
@@ -95,6 +104,13 @@ the end of the train data set
 tail(train)
 ```
 Seeing how many airplines we are working with in training 
+
+
+dimention
+```{r}
+dim(train)
+```
+
 ```{r}
 table(train$Airline)
 
@@ -127,7 +143,7 @@ let's see a  airlines delay in a subset of about 100 in  train
 ```{r}
 sub<-train[1:500,]
 T<-table(sub$Airline,(sub$Delay==1))
-plot(T, main="Airlines Arival Delay or not")
+plot(T, ylab="id delay", col="blue", main="Airlines Arival Delay or not")
 ```
  
 in the subset it can see that there are airlines, w
@@ -152,7 +168,7 @@ nb1<- naiveBayes(Delay~.,data=train)
 nb1
 ```
 here we can see a mean of airlines and flights
-
+the likelihood of airline and flights being delay 
 
 #model testing 
 ```{r}
