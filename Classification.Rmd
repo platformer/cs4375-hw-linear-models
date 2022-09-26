@@ -54,11 +54,16 @@ make a model line.
 Naive bayes is easy to implement and interpret. It works well with small data. it also works well with high dimension
 
 **weakness of naive bayes**
-Naive bayes tend to outperform in larger set.there are many guesses that are not sometimes made in a train dataset.there is a limitation if the predictors are
-not independent.
+Naive bayes tend to outperform in larger set.there are many guesses that are not sometimes made in a train dataset.there is a limitation if the predictors are not independent.
 
 **the evaluation**
 The benefit of using this was see the probability of a airline being delay or not.
+**logistic vs naiv bais**
+for this data there is more information given through logistic regression gml and in naive bayes. In naive bayes it shows the mean of delay with each factor but does not give a good prediction. with logistic regression it seem a better accuracy is beter and naive bayes but the accuracy sits the best in the roc 
+function. 
+
+**reflection of classification matrix**
+The matrices shows the pobability of the each predictor being delay or not. i the predictors we have, the flights predictor was least usefu as all the factors were unique so cannot give any estimation of future garuntee. where we can evaluate on the airlines for a better prediction. So the linear graph for tpr an fpr is accounted for both predictor and a mix evaluation of delay or not.
 
 ##Reading csv file
 want find the difference of delay and not delay
@@ -157,8 +162,9 @@ glm1 <- glm(Delay~. , family=binomial, data=train)
 summary(glm1)
 ```
 It took 4 itteration to get the results
-There is a drop from the Null deviance to the Residual deviance
+There is a drop from the Null deviance to the Residual deviance indicating a good prediction
 for all two predict or for airline and flight there is a good p value of less the 2e^-16 
+The z value coming to be 40.5 for airline and  -30.1 for flight 
 
 ##naive basis
 
@@ -170,6 +176,8 @@ nb1
 here we can see a mean of airlines and flights
 the likelihood of airline and flights being delay 
 
+
+
 #model testing 
 ```{r}
 probs <- predict(glm1, newdata = test, type="response")
@@ -177,19 +185,40 @@ preds <- ifelse(probs==0,0,1)
 acc1<- mean(preds==test$Delay)
 print(paste("glm1 accuracy =",acc1))
 table(preds,test$Delay)
+
+```
+
+From this models of test data it can be seen that the rate of being late is low 
+the matrix shows the true positive to the reference of being delay. there is a higher flase positive in the data showign a less likely of being delay
+the mean shows the rate being .58 
+
+#addition add 
+```{r}
+library(ROCR)
+p<-predict(glm1, newdata = test,test="response")
+pr<- prediction(p,test$Delay)
+prf <- performance(pr,measure="tpr", x.measure="fpr")
+
+plot((prf))
+
+```
+There is a relative growth in the rate or true positive and false positive 
+```{r}
+auc <- performance(pr, measure="auc")
+auc <- auc@y.values[[1]]
+auc
+```
+the auc is .55, 
+```{r}
+
 print("prediction of naive bais")
 predN <- predict(nb1,newdata = test, type="class")
 table(predN,test$Delay)
 print("mean of delays in the naive bais ")
 mean(predN==test$Delay)
-
-```
-
-From this models of test data it can be seen that the rate of being late is low 
-the mean shows the rate being .58 
-
-
-
+```   
+the matrix shows the likelihood of prediction being delay . keeping delay as a reference you can sees mean probability of being delay or not. 
+There is a better accuracy in tbhe naive bais compare to logistic regression of .58 
 
 
 
