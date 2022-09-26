@@ -1,1 +1,224 @@
+---
+Title: "Classification"
+Author:"Atmin Sheth, Andrew Sen "
+output:
+  html:
+    df_print:paged
+    pdf_document:default
+editor: 
+  chunck_output_type: inline
+
+---
+
+**Author:**
+  Atmin Sheth
+  Andrew Sen
+  
+**Date**
+09-23-2022
+
+
+**Data**
+
+The note book is acquired on kragle  dataset called Airlines
+showing the airline and their flights being delay(1) or not (0)
+
+The predictor include:
+*   id: int (unique number )
+*   Airline: factor of char 
+*   Flight: int (unique number)
+*   AirpotFrom: char
+*   AirportTo:  char
+*   DayofWeek: int(constant)
+*   Time: int
+*   Delay: boolean Delay(1) not delay(0)
+targeted predictor:
+*   Airline
+*   Flight
+*   Delay
+
+***overview of Logistic regression***
+Logistic Regression allows to classify the data into n- parts  to determine the section the factors belong and predict upon that 
+for this dataset is a classification of if the airlines will have delay or not , flight is to see a corelatrion wiht airline
+
+**strengths of logistic **
+The benefit of using logistic reggresuib model let's you separate the classes and see a distinct differences, it is easy computation 
+where the result is in probability bases on the predictor and and relation of probability or mean to other predictors. The output
+is easy to comprehend.
+
+**weakness of logistic**
+there is a chance of too close of probability so not able to classify due to being clustered.  Not able to sometimes 
+make a model line. 
+
+**Strength of naive bayes**
+Naive bayes is easy to implement and interpret. It works well with small data. it also works well with high dimension
+
+**weakness of naive bayes**
+Naive bayes tend to outperform in larger set.there are many guesses that are not sometimes made in a train dataset.there is a limitation if the predictors are not independent.
+
+**the evaluation**
+The benefit of using this was see the probability of a airline being delay or not.
+**logistic vs naiv bais**
+for this data there is more information given through logistic regression gml and in naive bayes. In naive bayes it shows the mean of delay with each factor but does not give a good prediction. with logistic regression it seem a better accuracy is beter and naive bayes but the accuracy sits the best in the roc 
+function. 
+
+**reflection of classification matrix**
+The matrices shows the pobability of the each predictor being delay or not. i the predictors we have, the flights predictor was least usefu as all the factors were unique so cannot give any estimation of future garuntee. where we can evaluate on the airlines for a better prediction. So the linear graph for tpr an fpr is accounted for both predictor and a mix evaluation of delay or not.
+
+##Reading csv file
+want find the difference of delay and not delay
+the airlines that are tend to be delay
+```{r}
+flights <- read.csv("Data/Airlines.csv", header = TRUE)
+str(flights)
+```
+
+###data cleean
+getting the data we want to work with that be airlines,flight and  delay
+
+
+```{r}
+flights <- flights[,c(2,3,9)]
+flights$Airline <- as.numeric(factor(flights$Airline))
+head(flights)
+```
+
+##Data Exploration
+spliting the data to training and testinng in a ration of 80/20(.4) train/test
+
+
+```{r}
+set.seed(3)
+i <- sample(1:nrow(flights), .4*nrow(flights),replace=FALSE)
+train <- flights[-i,]
+test <- flights[i,]
+```
+
+```{r}
+summary(train)
+```
+
+seeing the head of the train set
+
+```{r}
+head(train)
+```
+
+the end of the train data set 
+```{r}
+tail(train)
+```
+Seeing how many airplines we are working with in training 
+
+
+dimention
+```{r}
+dim(train)
+```
+
+```{r}
+table(train$Airline)
+
+```
+Seeing the sum of delay flight 
+how many of the files in the train dataset was delaye
+```{r}
+sum(train$Delay)
+```
+where are the flight most going to 
+```{r}
+dim(train )
+```
+
+
+
+
+bar graph to show the delay vs non delay in all of the airline in train data set
+```{r}
+count <- table(train$Delay)
+bp<- barplot(count,main="Flights arival times", names.arg=c("Delay", "on Time"),cex.names=.8)
+```
+
+There are more delay in overall flights then reaching in time 
+
+
+
+
+let's see a  airlines delay in a subset of about 100 in  train
+```{r}
+sub<-train[1:500,]
+T<-table(sub$Airline,(sub$Delay==1))
+plot(T, ylab="id delay", col= c("blue","red"), main="Airlines Arival Delay or not")
+```
+ 
+in the subset it can see that there are airlines, w
+
+
+
+##logistic regression predictor
+
+```{r}
+glm1 <- glm(Delay~. , family=binomial, data=train)
+summary(glm1)
+```
+It took 4 itteration to get the results
+There is a drop from the Null deviance to the Residual deviance indicating a good prediction
+for all two predict or for airline and flight there is a good p value of less the 2e^-16 
+The z value coming to be 40.5 for airline and  -30.1 for flight 
+
+##naive basis
+
+```{r}
+library(e1071)
+nb1<- naiveBayes(Delay~.,data=train)
+nb1
+```
+here we can see a mean of airlines and flights
+the likelihood of airline and flights being delay 
+
+
+
+#model testing 
+```{r}
+probs <- predict(glm1, newdata = test, type="response")
+preds <- ifelse(probs==0,0,1)
+acc1<- mean(preds==test$Delay)
+print(paste("glm1 accuracy =",acc1))
+table(preds,test$Delay)
+
+```
+
+From this models of test data it can be seen that the rate of being late is low 
+the matrix shows the true positive to the reference of being delay. there is a higher flase positive in the data showign a less likely of being delay
+the mean shows the rate being .58 
+
+#addition add 
+```{r}
+library(ROCR)
+p<-predict(glm1, newdata = test,test="response")
+pr<- prediction(p,test$Delay)
+prf <- performance(pr,measure="tpr", x.measure="fpr")
+
+plot((prf))
+
+```
+There is a relative growth in the rate or true positive and false positive 
+```{r}
+auc <- performance(pr, measure="auc")
+auc <- auc@y.values[[1]]
+auc
+```
+the auc is .55, 
+```{r}
+
+print("prediction of naive bais")
+predN <- predict(nb1,newdata = test, type="class")
+table(predN,test$Delay)
+print("mean of delays in the naive bais ")
+mean(predN==test$Delay)
+```   
+the matrix shows the likelihood of prediction being delay . keeping delay as a reference you can sees mean probability of being delay or not. 
+There is a better accuracy in tbhe naive bais compare to logistic regression of .58 
+
+
 
